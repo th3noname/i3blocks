@@ -91,5 +91,5 @@ func parseAPT(b []byte) (string, error) {
 		return "", errors.New("empty data body")
 	}
 
-	return strings.Split(string(out), ";")[0], nil
+	return strings.Split(string(b), ";")[0], nil
 }
