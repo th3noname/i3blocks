@@ -7,25 +7,39 @@ import (
 	"text/template"
 
 	"github.com/pkg/errors"
+	"github.com/th3noname/i3blocks/blocks"
 )
 
 // Battery provides information about battery status
 type Battery struct {
-	PrintTemplate string
-	Data          data
+	Conf configuration
+	Data data
 }
 
-// Data contains the collected information
 type data struct {
-	// either Full Charging Discharging
+	// either Full, Charging, Discharging
 	Status string
-	Power  string
-	Time   []string
+
+	// in percent
+	Power string
+
+	// slice containing the remaining time (h:m:s)
+	Time []string
+}
+
+type configuration struct {
+	PrintTemplate string
+	UrgentValue   string
+	Color         string
 }
 
 // New returns a instance of type Battery
 func New() Battery {
-	return Battery{PrintTemplate: "{{ .Status }} {{ .Power }} {{ .Time }}"}
+	return Battery{
+		Conf: configuration{
+			PrintTemplate: "{{ .Status }} {{ .Power }} {{ .Time }}",
+		},
+	}
 }
 
 // Exec collects the information
@@ -40,8 +54,7 @@ func (p *Battery) Exec() error {
 		return errors.New("CMD returned empty or no Battery installed")
 	}
 
-	out = bytes.TrimPrefix(out, []byte("Battery 0: "))
-	parts := bytes.Split(out, []byte(","))
+	parts := bytes.Split(bytes.TrimPrefix(out, []byte("Battery 0: ")), []byte(","))
 
 	p.Data.Status = string(bytes.TrimSpace(parts[0]))
 	p.Data.Power = string(bytes.TrimSuffix(bytes.TrimSpace(parts[1]), []byte("%")))
@@ -53,15 +66,22 @@ func (p *Battery) Exec() error {
 }
 
 // Print outputs a formatted string using PrintTemplate
-func (p *Battery) Print() (string, error) {
+func (p *Battery) Print() (blocks.Output, error) {
 	t := template.New("p")
 
-	t, err := t.Parse(p.PrintTemplate)
+	t, err := t.Parse(p.Conf.PrintTemplate)
 	if err != nil {
-		return "", errors.Wrap(err, "parsing template failed")
+		return blocks.Output{}, errors.Wrap(err, "parsing template failed")
 	}
 
 	var out bytes.Buffer
 	err = t.Execute(&out, p.Data)
-	return out.String(), errors.Wrap(err, "executing template failed")
+
+	return blocks.Output{
+			ShortText: out.String(),
+			FullText:  out.String(),
+			Urgent:    p.Data.Power <= p.Conf.UrgentValue,
+			Color:     p.Conf.Color,
+		},
+		errors.Wrap(err, "executing template failed")
 }

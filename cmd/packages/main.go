@@ -10,20 +10,24 @@ import (
 func main() {
 	p := packages.New()
 
-	err := p.Exec(packages.APT)
+	p.Conf.UrgentValue = "30"
+	p.Conf.Pkg = packages.APT_HOOK
+	p.Conf.PrintTemplate = " {{ .Packages }}"
+
+	err := p.Exec()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	p.PrintTemplate = " {{ .Packages }}"
-
-	s, err := p.Print()
+	o, err := p.Print()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	fmt.Println(s)
-	fmt.Println(s)
+	fmt.Print(o.String())
+	if o.Urgent {
+		os.Exit(33)
+	}
 }

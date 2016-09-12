@@ -10,13 +10,8 @@ import (
 func main() {
 	b := battery.New()
 
-	err := b.Exec()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	b.PrintTemplate = `{{ if eq .Status "Full" -}}
+	b.Conf.UrgentValue = "5"
+	b.Conf.PrintTemplate = `{{ if eq .Status "Full" -}}
 		 {{ .Power }}%
 		{{- else if eq .Status "Charging" -}}
 		 {{ .Power }}% {{ index .Time 0 }}:{{ index .Time 1 }}
@@ -34,12 +29,20 @@ func main() {
 		{{- end }} {{ .Power }}% {{ index .Time 0 }}:{{ index .Time 1 }}
 		{{- end }}`
 
-	s, err := b.Print()
+	err := b.Exec()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	fmt.Println(s)
-	fmt.Println(s)
+	o, err := b.Print()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	fmt.Print(o.String())
+	if o.Urgent {
+		os.Exit(33)
+	}
 }
