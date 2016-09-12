@@ -10,19 +10,19 @@ import (
 func main() {
 	b := battery.New()
 
-	b.Conf.UrgentValue = "5"
+	b.Conf.UrgentValue = 5
 	b.Conf.PrintTemplate = `{{ if eq .Status "Full" -}}
 		 {{ .Power }}%
 		{{- else if eq .Status "Charging" -}}
 		 {{ .Power }}% {{ index .Time 0 }}:{{ index .Time 1 }}
 		{{- else if eq .Status "Discharging" -}}
-		{{- if le .Power "75" -}}
+		{{- if le .Power 75 -}}
 		
-		{{- else if le .Power "50" -}}
+		{{- else if le .Power 50 -}}
 		
-		{{- else if le .Power "25" -}}
+		{{- else if le .Power 25 -}}
 		
-		{{- else if le .Power "5" -}}
+		{{- else if le .Power 5 -}}
 		
 		{{- else -}}
 		

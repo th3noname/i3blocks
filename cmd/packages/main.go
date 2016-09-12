@@ -10,7 +10,7 @@ import (
 func main() {
 	p := packages.New()
 
-	p.Conf.UrgentValue = "30"
+	p.Conf.UrgentValue = 30
 	p.Conf.Pkg = packages.APT_HOOK
 	p.Conf.PrintTemplate = " {{ .Packages }}"
 

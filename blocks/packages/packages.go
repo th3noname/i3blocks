@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"os/exec"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -39,12 +40,12 @@ type Packages struct {
 }
 
 type data struct {
-	Packages string
+	Packages int
 }
 
 type configuration struct {
 	PrintTemplate string
-	UrgentValue   string
+	UrgentValue   int
 	Color         string
 	Pkg           PackageManager
 }
@@ -106,10 +107,10 @@ func (p *Packages) Print() (blocks.Output, error) {
 		errors.Wrap(err, "executing template failed")
 }
 
-func parseAPT(b []byte) (string, error) {
+func parseAPT(b []byte) (int, error) {
 	if len(b) == 0 {
-		return "", errors.New("empty data body")
+		return 0, errors.New("empty data body")
 	}
 
-	return strings.Split(string(b), ";")[0], nil
+	return strconv.Atoi(strings.Split(string(b), ";")[0])
 }

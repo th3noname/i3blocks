@@ -3,6 +3,7 @@ package battery
 import (
 	"bytes"
 	"os/exec"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -21,7 +22,7 @@ type data struct {
 	Status string
 
 	// in percent
-	Power string
+	Power int
 
 	// slice containing the remaining time (h:m:s)
 	Time []string
@@ -29,7 +30,7 @@ type data struct {
 
 type configuration struct {
 	PrintTemplate string
-	UrgentValue   string
+	UrgentValue   int
 	Color         string
 }
 
@@ -57,7 +58,11 @@ func (p *Battery) Exec() error {
 	parts := bytes.Split(bytes.TrimPrefix(out, []byte("Battery 0: ")), []byte(","))
 
 	p.Data.Status = string(bytes.TrimSpace(parts[0]))
-	p.Data.Power = string(bytes.TrimSuffix(bytes.TrimSpace(parts[1]), []byte("%")))
+	p.Data.Power, err = strconv.Atoi(string(bytes.TrimSuffix(bytes.TrimSpace(parts[1]), []byte("%"))))
+	if err != nil {
+		return errors.Wrap(err, "converting power value failed")
+	}
+
 	if len(parts) >= 3 {
 		p.Data.Time = strings.Split(string(bytes.TrimSpace(bytes.TrimSuffix(parts[2], []byte("remaining\n")))), ":")
 	}
