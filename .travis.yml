@@ -1,0 +1,10 @@
+language: go
+
+go:
+  - 1.7
+  - tip
+  
+install:
+  - go get github.com/pkg/errors
+  
+script: go build -v ./cmd/...
