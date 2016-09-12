@@ -35,8 +35,9 @@ func (p *Battery) Exec() error {
 		return errors.Wrap(err, "executing command failed")
 	}
 
-	if len(out) == 0 {
-		return errors.New("CMD returned empty")
+	if len(out) == 0 ||
+		bytes.Count(out, []byte("Battery 0: ")) == 0 {
+		return errors.New("CMD returned empty or no Battery installed")
 	}
 
 	out = bytes.TrimPrefix(out, []byte("Battery 0: "))
