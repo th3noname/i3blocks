@@ -1,4 +1,4 @@
-# i3blocks
+# i3blocks [![Build Status](https://travis-ci.org/th3noname/i3blocks.svg?branch=master)](https://travis-ci.org/th3noname/i3blocks)
 
 This repository contains information blocks for the i3bar written in Go.
 
