@@ -10,7 +10,7 @@ import (
 func main() {
 	p := packages.New()
 
-	err := p.Exec(packages.APTITUDE)
+	err := p.Exec(packages.APT)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
