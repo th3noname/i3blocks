@@ -2,6 +2,7 @@ package battery
 
 import (
 	"bytes"
+	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -32,6 +33,7 @@ type configuration struct {
 	PrintTemplate string
 	UrgentValue   int
 	Color         string
+	BatteryID     int
 }
 
 // New returns a instance of type Battery
@@ -44,49 +46,72 @@ func New() Battery {
 }
 
 // Exec collects the information
-func (p *Battery) Exec() error {
+func (b *Battery) Exec() error {
 	out, err := exec.Command("acpi", "-b").CombinedOutput()
 	if err != nil {
-		return errors.Wrap(err, "executing command failed")
+		return errors.Wrap(err, "command execution failed")
 	}
 
-	if len(out) == 0 ||
-		bytes.Count(out, []byte("Battery 0: ")) == 0 {
-		return errors.New("CMD returned empty or no Battery installed")
+	if len(out) == 0 {
+		return errors.New("command returned empty")
 	}
 
-	parts := bytes.Split(bytes.TrimPrefix(out, []byte("Battery 0: ")), []byte(","))
-
-	p.Data.Status = string(bytes.TrimSpace(parts[0]))
-	p.Data.Power, err = strconv.Atoi(string(bytes.TrimSuffix(bytes.TrimSpace(parts[1]), []byte("%"))))
-	if err != nil {
-		return errors.Wrap(err, "converting power value failed")
-	}
-
-	if len(parts) >= 3 {
-		p.Data.Time = strings.Split(string(bytes.TrimSpace(bytes.TrimSuffix(parts[2], []byte("remaining\n")))), ":")
-	}
-
-	return nil
+	return parseACPI(out)
 }
 
 // Print outputs a formatted string using PrintTemplate
-func (p *Battery) Print() (blocks.Output, error) {
-	t := template.New("p")
+func (b *Battery) Print() (blocks.Output, error) {
+	t := template.New("b")
 
-	t, err := t.Parse(p.Conf.PrintTemplate)
+	t, err := t.Parse(b.Conf.PrintTemplate)
 	if err != nil {
 		return blocks.Output{}, errors.Wrap(err, "parsing template failed")
 	}
 
 	var out bytes.Buffer
-	err = t.Execute(&out, p.Data)
+	err = t.Execute(&out, b.Data)
 
 	return blocks.Output{
 			ShortText: out.String(),
 			FullText:  out.String(),
-			Urgent:    p.Data.Power <= p.Conf.UrgentValue,
-			Color:     p.Conf.Color,
+			Urgent:    b.Data.Power <= b.Conf.UrgentValue,
+			Color:     b.Conf.Color,
 		},
 		errors.Wrap(err, "executing template failed")
+}
+
+func (b *Battery) parseACPI(d []byte) error {
+	batteryPrefix := []byte(fmt.Sprintf("Battery %d: ", b.Conf.BatteryID))
+	
+	batteries := bytes.Split(d, []byte("\n"))
+	
+	for _, battery := range batteries {
+		i := bytes.Index(battery, batteryPrefix)
+		if i == -1 {
+			continue 
+		}
+		
+		parts := bytes.Split(battery[i + len(batteryPrefix):], []byte(","))
+		
+		for c, _ := range parts {
+			parts[c] = bytes.TrimSpace(parts[c])
+		}
+		
+		b.Data.Status = string(parts[0])
+		
+		b.Data.Power, err := strconv.Atoi(
+			string(parts[1][:len(parts[1]) - 1]),
+		)
+		if err != nil {
+			return errors.Wrap(err, "converting power value failed")
+		}
+		
+		if len(parts) >= 3 {
+			p.Data.Time = strings.Split(string(parts[2][:8]), ":")
+		}
+		
+		return nil
+	}
+	
+	return errors.New("specified battery id does not exist")
 }
