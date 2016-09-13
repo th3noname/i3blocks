@@ -56,7 +56,7 @@ func (b *Battery) Exec() error {
 		return errors.New("command returned empty")
 	}
 
-	return parseACPI(out)
+	return b.parseACPI(out)
 }
 
 // Print outputs a formatted string using PrintTemplate
@@ -99,7 +99,8 @@ func (b *Battery) parseACPI(d []byte) error {
 		
 		b.Data.Status = string(parts[0])
 		
-		b.Data.Power, err := strconv.Atoi(
+		var err error
+		b.Data.Power, err = strconv.Atoi(
 			string(parts[1][:len(parts[1]) - 1]),
 		)
 		if err != nil {
@@ -107,7 +108,7 @@ func (b *Battery) parseACPI(d []byte) error {
 		}
 		
 		if len(parts) >= 3 {
-			p.Data.Time = strings.Split(string(parts[2][:8]), ":")
+			b.Data.Time = strings.Split(string(parts[2][:8]), ":")
 		}
 		
 		return nil
