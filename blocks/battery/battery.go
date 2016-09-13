@@ -62,7 +62,6 @@ func (b *Battery) Exec() error {
 // Print outputs a formatted string using PrintTemplate
 func (b *Battery) Print() (blocks.Output, error) {
 	t := template.New("b")
-
 	t, err := t.Parse(b.Conf.PrintTemplate)
 	if err != nil {
 		return blocks.Output{}, errors.Wrap(err, "parsing template failed")
@@ -84,7 +83,6 @@ func (b *Battery) parseACPI(d []byte) error {
 	batteryPrefix := []byte(fmt.Sprintf("Battery %d: ", b.Conf.BatteryID))
 	
 	batteries := bytes.Split(d, []byte("\n"))
-	
 	for _, battery := range batteries {
 		i := bytes.Index(battery, batteryPrefix)
 		if i == -1 {
@@ -92,17 +90,13 @@ func (b *Battery) parseACPI(d []byte) error {
 		}
 		
 		parts := bytes.Split(battery[i + len(batteryPrefix):], []byte(","))
-		
 		for c, _ := range parts {
 			parts[c] = bytes.TrimSpace(parts[c])
 		}
 		
 		b.Data.Status = string(parts[0])
-		
 		var err error
-		b.Data.Power, err = strconv.Atoi(
-			string(parts[1][:len(parts[1]) - 1]),
-		)
+		b.Data.Power, err = strconv.Atoi(string(parts[1][:len(parts[1]) - 1]))
 		if err != nil {
 			return errors.Wrap(err, "converting power value failed")
 		}
